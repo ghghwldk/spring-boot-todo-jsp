@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
@@ -40,6 +39,8 @@ import kyungseo.poc.todo.jsp.service.TodoService;
 import kyungseo.poc.todo.jsp.service.TodoServiceData;
 import kyungseo.poc.todo.jsp.web.validation.TodoValidator;
 
+import java.util.List;
+
 /**
  * @author 박경서 (Kyungseo.Park@gmail.com)
  * @version 1.0
@@ -48,83 +49,102 @@ import kyungseo.poc.todo.jsp.web.validation.TodoValidator;
 @RequiredArgsConstructor
 @RequestMapping("/todos")
 public class TodoController {
-	private final TodoService todoService;
+    private final TodoService todoService;
     private final TodoValidator todoValidator;
 
-	@GetMapping({"", "/"}) // 목록 조회
-	public String getList(final HttpServletRequest request, final ModelMap model) {
-		model.addAttribute("todos", todoService.getTodosByUser("kyungseo"));
-		return "todo/list";
-	}
+    @GetMapping({"", "/"}) // List retrieval
+    public String getList(final HttpServletRequest request, final ModelMap model) {
+        model.addAttribute("todos", todoService.getTodosByUser("kyungseo"));
+        return "todo/list";
+    }
 
-	@GetMapping({"/new"}) // 단건 생성
-	public String showAddTodoForm(Model model) {
-		model.addAttribute("todo", new TodoDto());
-		model.addAttribute("mode", FormModeEnum.REGISTER.getValue());
-		return "todo/form";
-	}
+    @GetMapping({"/new"}) // Create single todo
+    public String showAddTodoForm(Model model) {
+        model.addAttribute("todo", new TodoDto());
+        model.addAttribute("mode", FormModeEnum.REGISTER.getValue());
+// mode for registering
+        return "todo/form";
+    }
 
-    @GetMapping("/{id}") // 단건 조회
-	public String showUpdateTodoForm(@PathVariable("id") Long id,  final ModelMap model) {
-		TodoDto todo = todoService.getTodoById(id);
-		model.addAttribute("todo", todo);
+    @GetMapping("/{id}") // View single todo
+    public String showUpdateTodoForm(@PathVariable("id") Long id, final ModelMap model) {
+        TodoDto todo = todoService.getTodoById(id);
+        model.addAttribute("todo", todo);
         model.addAttribute("mode", FormModeEnum.UPDATE.getValue());
-		return "todo/form";
-	}
+// mode for updating
+        return "todo/form";
+    }
 
     @PostMapping("/save")
-	public String updateTodo(@Valid @ModelAttribute("todo") final TodoDto todo, final BindingResult result, final ModelMap model) {
+    public String updateTodo(@Valid @ModelAttribute("todo") final TodoDto todo, final BindingResult result, final ModelMap model) {
         todoValidator.validate(todo, result);
         if (result.hasErrors()) {
             return "todo/form";
         }
-		todoService.saveTodo(todo);
-		return "redirect:/todos";
-	}
+        todoService.saveTodo(todo);
+        return "redirect:/todos";
+    }
 
-    @GetMapping("/{id}/done") // 상태 변경
+    @GetMapping("/{id}/done") // Change status
     public String updateIsDone(@PathVariable("id") final Long id, final ModelMap modell, RedirectAttributes redirectAttributes) {
         TodoDto todo = todoService.getTodoById(id);
-        todo.setDone(!todo.isDone()); // isDone 토글
+        todo.setDone(!todo.isDone()); // Toggle isDone
         todoService.saveTodo(todo);
-        redirectAttributes.addFlashAttribute("message", "할일(" + id + ")의 상태가 갱신 되었습니다.");
+        redirectAttributes.addFlashAttribute("message", "The status of todo (" + id + ") has been updated.");
         return "redirect:/todos";
     }
 
     //@DeleteMapping("/{id}")
-    @GetMapping("/{id}/delete") // 단건 삭제
+    @GetMapping("/{id}/delete") // Delete single todo
     public String deleteTodo(@PathVariable("id") final Long id, final ModelMap model, RedirectAttributes redirectAttributes) {
         todoService.deleteTodo(id);
-        redirectAttributes.addFlashAttribute("message", "할일(" + id + ")가 삭제되었습니다.");
+        redirectAttributes.addFlashAttribute("message", "Todo (" + id + ") has been deleted.");
         return "redirect:/todos";
     }
 
+
+
     @GetMapping({"/dashboard"})
     public String dashboardAll(
-            @RequestParam(value="category", defaultValue="all") final String category,
+            @RequestParam(value = "category", defaultValue = "all") final String category,
             final ModelMap model) {
-        String title;
-        TodoServiceData todoList = new TodoServiceData(todoService.getTodosByUser("kyungseo"));
 
-        if (category.equals("today")) {
-            title = "오늘의 할일 목록";
-            model.addAttribute("todos", todoList.getAllTodayTodos());
-        }
-        else if (category.equals("done")) {
-            title = "완료된 할일 목록";
-            model.addAttribute("todos", todoList.getCompletedTodayTodos());
-        }
-        else if (category.equals("pending")) {
-            title = "진행중인 할일 목록";
-            model.addAttribute("todos", todoList.getPendingTodos());
-        }
-        else { // category == "all"
-            title = "모든 할일 목록";
-            model.addAttribute("todos", todoList.getAllTodos());
-        }
+        TodoServiceData todoData = new TodoServiceData(todoService.getTodosByUser("kyungseo"));
+        PageTitleAndTodoResult result = getTitleAndTodos(category, todoData);
 
-        model.addAttribute("title", title);
+        model.addAttribute("todos", result.todos);
+        model.addAttribute("title", result.title);
         return "todo/dashboard";
     }
 
+    private PageTitleAndTodoResult getTitleAndTodos(String category, TodoServiceData todoData) {
+        String pageTitle;
+        List<TodoDto> todos;
+
+        if (category.equals("today")) {
+            pageTitle = "Today's todo list";
+            todos = todoData.getAllTodayTodos();
+        } else if (category.equals("done")) {
+            pageTitle = "Completed todo list";
+            todos = todoData.getCompletedTodayTodos();
+        } else if (category.equals("pending")) {
+            pageTitle = "Ongoing todo list";
+            todos = todoData.getPendingTodos();
+        } else { // category == "all"
+            pageTitle = "All todo list";
+            todos = todoData.getAllTodos();
+        }
+
+        return new PageTitleAndTodoResult(pageTitle, todos);
+    }
+
+    private static class PageTitleAndTodoResult {
+        String title;
+        List<TodoDto> todos;
+
+        PageTitleAndTodoResult(String title, List<TodoDto> todos) {
+            this.title = title;
+            this.todos = todos;
+        }
+    }
 }
