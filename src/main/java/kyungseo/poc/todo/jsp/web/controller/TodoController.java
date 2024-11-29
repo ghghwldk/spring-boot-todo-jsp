@@ -21,6 +21,7 @@ package kyungseo.poc.todo.jsp.web.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -44,14 +45,11 @@ import kyungseo.poc.todo.jsp.web.validation.TodoValidator;
  * @version 1.0
  */
 @Controller
+@RequiredArgsConstructor
 @RequestMapping("/todos")
 public class TodoController {
-
-	@Autowired
-	private TodoService todoService;
-
-	@Autowired
-    TodoValidator todoValidator;
+	private final TodoService todoService;
+    private final TodoValidator todoValidator;
 
 	@GetMapping({"", "/"}) // 목록 조회
 	public String getList(final HttpServletRequest request, final ModelMap model) {
@@ -62,7 +60,7 @@ public class TodoController {
 	@GetMapping({"/new"}) // 단건 생성
 	public String showAddTodoForm(Model model) {
 		model.addAttribute("todo", new TodoDto());
-		model.addAttribute("mode", "등록");
+		model.addAttribute("mode", FormModeEnum.REGISTER.getValue());
 		return "todo/form";
 	}
 
@@ -70,7 +68,7 @@ public class TodoController {
 	public String showUpdateTodoForm(@PathVariable("id") Long id,  final ModelMap model) {
 		TodoDto todo = todoService.getTodoById(id);
 		model.addAttribute("todo", todo);
-        model.addAttribute("mode", "갱신");
+        model.addAttribute("mode", FormModeEnum.UPDATE.getValue());
 		return "todo/form";
 	}
 

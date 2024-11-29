@@ -67,7 +67,7 @@ public class SetupDataLoader4Ds1 implements ApplicationListener<ContextRefreshed
     }
 
     @Transactional
-    Todo createTodo(String username, LocalDate targetDate, String desc, boolean isDone) {
+    public void createTodo(String username, LocalDate targetDate, String desc, boolean isDone) {
         Todo todo = new Todo();
         todo.setUserName(username);
         todo.setTargetDate(targetDate);
@@ -75,7 +75,6 @@ public class SetupDataLoader4Ds1 implements ApplicationListener<ContextRefreshed
         todo.setDone(isDone);
 
         todo = todoRepository.save(todo);
-        return todo;
     }
 
 }

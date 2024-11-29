@@ -24,7 +24,7 @@
         <div class="col-md-6 col-md-offset-3 ">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title"><spring:message code="todo.page.form.title" /> ${mode}</h5>
+              <h5 class="card-title"><spring:message code="todo.page.form.title" /> ${mode} + 테스트</h5>
               <p/>
               <form:form method="POST" modelAttribute="todo" action="${pageContext.request.contextPath}/todos/save">
                 <form:hidden path="id" />
