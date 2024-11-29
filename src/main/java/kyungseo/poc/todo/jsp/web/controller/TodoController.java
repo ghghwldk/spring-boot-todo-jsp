@@ -21,6 +21,7 @@ package kyungseo.poc.todo.jsp.web.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import kyungseo.poc.todo.jsp.payload.PageTitleAndTodoResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -62,7 +63,7 @@ public class TodoController {
     public String showAddTodoForm(Model model) {
         model.addAttribute("todo", new TodoDto());
         model.addAttribute("mode", FormModeEnum.REGISTER.getValue());
-// mode for registering
+        // mode for registering
         return "todo/form";
     }
 
@@ -71,7 +72,7 @@ public class TodoController {
         TodoDto todo = todoService.getTodoById(id);
         model.addAttribute("todo", todo);
         model.addAttribute("mode", FormModeEnum.UPDATE.getValue());
-// mode for updating
+        // mode for updating
         return "todo/form";
     }
 
@@ -110,41 +111,13 @@ public class TodoController {
             final ModelMap model) {
 
         TodoServiceData todoData = new TodoServiceData(todoService.getTodosByUser("kyungseo"));
-        PageTitleAndTodoResult result = getTitleAndTodos(category, todoData);
+        PageTitleAndTodoResult result = PageTitleAndTodoResult.of(category, todoData);
 
-        model.addAttribute("todos", result.todos);
-        model.addAttribute("title", result.title);
+        model.addAttribute("todos", result.getTodos());
+        model.addAttribute("title", result.getTitle());
         return "todo/dashboard";
     }
 
-    private PageTitleAndTodoResult getTitleAndTodos(String category, TodoServiceData todoData) {
-        String pageTitle;
-        List<TodoDto> todos;
 
-        if (category.equals("today")) {
-            pageTitle = "Today's todo list";
-            todos = todoData.getAllTodayTodos();
-        } else if (category.equals("done")) {
-            pageTitle = "Completed todo list";
-            todos = todoData.getCompletedTodayTodos();
-        } else if (category.equals("pending")) {
-            pageTitle = "Ongoing todo list";
-            todos = todoData.getPendingTodos();
-        } else { // category == "all"
-            pageTitle = "All todo list";
-            todos = todoData.getAllTodos();
-        }
 
-        return new PageTitleAndTodoResult(pageTitle, todos);
-    }
-
-    private static class PageTitleAndTodoResult {
-        String title;
-        List<TodoDto> todos;
-
-        PageTitleAndTodoResult(String title, List<TodoDto> todos) {
-            this.title = title;
-            this.todos = todos;
-        }
-    }
 }
